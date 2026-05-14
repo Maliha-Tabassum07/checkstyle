@@ -25,7 +25,6 @@ jobs:
 
   maven-prepare:
     uses: ./.github/workflows/release-maven-prepare.yml
-    needs: update-xdoc-with-releasenotes
     with:
       version: ${{ inputs.version }}
     permissions:
@@ -33,7 +32,6 @@ jobs:
 
   maven-perform:
     uses: ./.github/workflows/release-maven-perform.yml
-    needs: maven-prepare
     with:
       version: ${{ inputs.version }}
     secrets: inherit
@@ -42,7 +40,6 @@ jobs:
 
   update-github-page:
     uses: ./.github/workflows/release-update-github-page.yml
-    needs: maven-perform
     with:
       version: ${{ inputs.version }}
     secrets: inherit
@@ -51,7 +48,6 @@ jobs:
 
   upload-all-jar:
     uses: ./.github/workflows/release-upload-all-jar.yml
-    needs: update-github-page
     with:
       version: ${{ inputs.version }}
     secrets: inherit
@@ -60,7 +56,6 @@ jobs:
 
   new-milestone-and-issues-in-other-repos:
     uses: ./.github/workflows/release-new-milestone-and-issues-in-other-repos.yml
-    needs: update-github-page
     with:
       version: ${{ inputs.version }}
     secrets: inherit
@@ -78,14 +73,12 @@ jobs:
 
   update-github-io:
     uses: ./.github/workflows/release-update-github-io.yml
-    needs: maven-perform
     with:
       version: ${{ inputs.version }}
     secrets: inherit
 
   copy-github-io-to-sourceforge:
     uses: ./.github/workflows/release-copy-github-io-to-sourceforge.yml
-    needs: update-github-io
     with:
       version: ${{ inputs.version }}
     secrets: inherit
