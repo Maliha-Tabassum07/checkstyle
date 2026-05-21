@@ -20,8 +20,11 @@ env:
   USER_LOGIN: ${{ github.event.issue.user.login }}
 
 on:
-  issue_comment:
-    types: [ created, edited ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'POM version without (-SNAPSHOT)'
+        required: true
 
 permissions:
   contents: read
