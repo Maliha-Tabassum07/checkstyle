@@ -101,7 +101,6 @@ jobs:
 
   make_report:
     runs-on: ubuntu-latest
-    needs: parse_body
     if: needs.parse_body.outputs.config_link != ''
             || needs.parse_body.outputs.new_module_config_link != ''
     outputs:
@@ -215,7 +214,6 @@ jobs:
   # should be always last step
   send_message:
     runs-on: ubuntu-latest
-    needs: [ parse_body, make_report ]
     if: failure() || success()
     steps:
       - name: Checkout repository
