@@ -40,38 +40,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check_pr_status:
-    if: |
-      github.event.issue.pull_request
-      && (startsWith(github.event.comment.body, 'Github, generate report for ')
-          ||  startsWith(github.event.comment.body, 'GitHub, generate report for ')
-          ||  startsWith(github.event.comment.body,
-                         'Github, generate report for configs in PR description')
-          ||  startsWith(github.event.comment.body,
-                         'GitHub, generate report for configs in PR description')
-          ||  startsWith(github.event.comment.body,
-                         'Github, generate report by config from')
-          ||  startsWith(github.event.comment.body,
-                         'GitHub, generate report by config from'))
-
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check PR status
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_URL: ${{ github.event.issue.pull_request.url }}
-        run: |
-          PR_STATE=$(curl --fail-with-body -s -H "Authorization: token $GITHUB_TOKEN" \
-                     -H "Accept: application/vnd.github.v3+json" \
-                     "$PR_URL" | jq -r .state)
-          if [ "$PR_STATE" != "open" ]; then
-            echo "PR is not active"
-            exit 1
-          fi
-
   checkout_and_cache:
     runs-on: ubuntu-latest
-    needs: [ check_pr_status ]
     outputs:
       pr_branch: ${{ steps.get_pr_details.outputs.branch }}
       commit_sha: ${{ steps.get_pr_details.outputs.commit_sha }}
@@ -127,7 +97,7 @@ jobs:
 
   parse_comment:
     runs-on: ubuntu-latest
-    needs: [ check_pr_status, checkout_and_cache ]
+    needs: [ checkout_and_cache ]
     outputs:
       mode: ${{ steps.parse.outputs.mode }}
       config_bundle: ${{ steps.parse.outputs.config_bundle }}
@@ -644,7 +614,7 @@ jobs:
           ./.ci/append-to-github-output.sh "message" "$(cat .ci-temp/message)"
 
   add_sad_Emoji:
-    needs: [ check_pr_status, parse_comment, make_report ]
+    needs: [ parse_comment, make_report ]
     if: cancelled()
     runs-on: ubuntu-latest
     steps:
@@ -664,7 +634,6 @@ jobs:
   send_message:
     runs-on: ubuntu-latest
     needs: [
-      check_pr_status,
       checkout_and_cache,
       parse_comment,
       handle_existing_config_bundle,
@@ -681,7 +650,6 @@ jobs:
           || needs.handle_existing_config_bundle.result == 'failure'
           || needs.handle_generated_config_bundle.result == 'failure'
           || needs.handle_configs_in_pr_description.result == 'failure'
-          || needs.check_pr_status.result == 'failure'
           || needs.checkout_and_cache.result == 'failure'
           || needs.parse_comment.result == 'failure'
           || needs.add_sad_Emoji.result == 'failure')
@@ -701,7 +669,6 @@ jobs:
           EXISTING_CONFIG_RESULT: ${{ needs.handle_existing_config_bundle.result }}
           GENERATED_CONFIG_RESULT: ${{ needs.handle_generated_config_bundle.result }}
           CONFIGS_IN_PR_RESULT: ${{ needs.handle_configs_in_pr_description.result }}
-          PR_STATUS_RESULT: ${{ needs.check_pr_status.result }}
           CHECKOUT_RESULT: ${{ needs.checkout_and_cache.result }}
           PARSE_RESULT: ${{ needs.parse_comment.result }}
           ADD_SAD_RESULT: ${{ needs.add_sad_Emoji.result }}
